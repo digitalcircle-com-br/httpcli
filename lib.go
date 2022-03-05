@@ -99,7 +99,6 @@ func (c *Client) Do(method string, strurl string, body []byte) (*http.Response, 
 		return nil, errors.New(fmt.Sprintf("Http return code - %d: %s", res.StatusCode, res.Status))
 	}
 	c.LastRes = res
-	c.Cli.J
 	return res, err
 }
 

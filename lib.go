@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	gopath "path"
 	"strings"
@@ -26,6 +27,37 @@ type Client struct {
 	BasePath string
 	Headers  http.Header
 	LastRes  *http.Response
+}
+
+type SimpleCookieJar struct {
+	cookies map[string]*http.Cookie
+}
+
+// SetCookies handles the receipt of the cookies in a reply for the
+// given URL.  It may or may not choose to save the cookies, depending
+// on the jar's policy and implementation.
+func (s *SimpleCookieJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
+	for _, v := range cookies {
+		s.cookies[v.Name] = v
+	}
+}
+
+// Cookies returns the cookies to send in a request for the given URL.
+// It is up to the implementation to honor the standard cookie use
+// restrictions such as in RFC 6265.
+func (s *SimpleCookieJar) Cookies(u *url.URL) []*http.Cookie {
+	ret := make([]*http.Cookie, len(s.cookies))
+	i := 0
+	for _, v := range s.cookies {
+		ret[i] = v
+		i++
+	}
+	return ret
+}
+
+func newSimpleCookieJar() *SimpleCookieJar {
+	ret := &SimpleCookieJar{cookies: make(map[string]*http.Cookie)}
+	return ret
 }
 
 //Do - This is the innermost function, and is really what DOES the http request.
@@ -67,7 +99,7 @@ func (c *Client) Do(method string, strurl string, body []byte) (*http.Response, 
 		return nil, errors.New(fmt.Sprintf("Http return code - %d: %s", res.StatusCode, res.Status))
 	}
 	c.LastRes = res
-
+	c.Cli.J
 	return res, err
 }
 
@@ -259,7 +291,9 @@ func (c *Client) GetSetCookie(ck string) {
 //New - creates a new Client. Since we rely on std lib client, this is also thread safe, so no need to create multiple ones.
 func New() *Client {
 	ret := &Client{
-		Cli:     &http.Client{},
+		Cli: &http.Client{
+			Jar: newSimpleCookieJar(),
+		},
 		Headers: http.Header{},
 	}
 	return ret

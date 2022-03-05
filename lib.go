@@ -22,10 +22,10 @@ import (
 //This is usefull when you may need to switch endpoints, like DEV/QAS/PRD, but all remainder path portion remains the same.
 //
 type Client struct {
-	Cli            *http.Client
-	BasePath       string
-	Headers        http.Header
-	LastResHeaders http.Header
+	Cli      *http.Client
+	BasePath string
+	Headers  http.Header
+	LastRes  *http.Response
 }
 
 //Do - This is the innermost function, and is really what DOES the http request.
@@ -66,7 +66,8 @@ func (c *Client) Do(method string, strurl string, body []byte) (*http.Response, 
 	if res.StatusCode >= 400 {
 		return nil, errors.New(fmt.Sprintf("Http return code - %d: %s", res.StatusCode, res.Status))
 	}
-	c.LastResHeaders = res.Header
+	c.LastRes = res
+
 	return res, err
 }
 
@@ -249,6 +250,9 @@ func (c *Client) WS(strurl string) (*websocket.Conn, *http.Response, error) {
 	}
 	strurl = strings.Replace(strurl, "http", "ws", 1)
 	return websocket.DefaultDialer.Dial(strurl, c.Headers)
+
+}
+func (c *Client) GetSetCookie(ck string) {
 
 }
 

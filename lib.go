@@ -22,9 +22,10 @@ import (
 //This is usefull when you may need to switch endpoints, like DEV/QAS/PRD, but all remainder path portion remains the same.
 //
 type Client struct {
-	Cli      *http.Client
-	Headers  http.Header
-	BasePath string
+	Cli            *http.Client
+	BasePath       string
+	Headers        http.Header
+	LastResHeaders http.Header
 }
 
 //Do - This is the innermost function, and is really what DOES the http request.
@@ -65,6 +66,7 @@ func (c *Client) Do(method string, strurl string, body []byte) (*http.Response, 
 	if res.StatusCode >= 400 {
 		return nil, errors.New(fmt.Sprintf("Http return code - %d: %s", res.StatusCode, res.Status))
 	}
+	c.LastResHeaders = res.Header
 	return res, err
 }
 
@@ -79,6 +81,7 @@ func (c *Client) DoJson(method string, strurl string, i interface{}, o interface
 	if err != nil {
 		return
 	}
+
 	defer res.Body.Close()
 	if o != nil {
 		err = json.NewDecoder(res.Body).Decode(o)
